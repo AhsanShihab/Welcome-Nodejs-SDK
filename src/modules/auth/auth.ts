@@ -8,6 +8,8 @@ import {
   UnprocessableEntity,
 } from "../../errors";
 
+const OAUTH_PATH = "/o/oauth2/v1";
+
 enum GrantType {
   AUTHORIZATION_CODE = "authorization_code",
   CLIENT_CREDENTIALS = "client_credentials",
@@ -19,6 +21,7 @@ interface AuthConstructorParam {
   clientId?: string;
   clientSecret?: string;
   redirectUri?: string;
+  ssoBaseUrl?: string;
   onAuthSuccess?: (
     accessToken: string,
     refreshToken?: string,
@@ -69,9 +72,7 @@ export class Auth {
   #onAuthSuccess?: (accessToken: string, refreshToken?: string, tokenGetParam?: any) => any;
   #onAuthFailure?: (error: string) => any;
   #tokenChangeCallback?: (accessToken: string, refreshToken: string, tokenGetParam?: any) => any;
-
-  static authorizationServerAddr =
-    "https://accounts.cmp.optimizely.com/o/oauth2/v1";
+  #ssoBaseUrl: string;
 
   constructor(param: AuthConstructorParam) {
     this.#accessToken = param.accessToken;
@@ -79,6 +80,7 @@ export class Auth {
     this.#clientId = param.clientId || process.env.CMP_CLIENT_ID || process.env.WELCOME_CLIENT_ID;
     this.#clientSecret = param.clientSecret || process.env.CMP_CLIENT_SECRET || process.env.WELCOME_CLIENT_SECRET;
     this.#redirectUri = param.redirectUri;
+    this.#ssoBaseUrl = (param.ssoBaseUrl || "https://accounts.cmp.optimizely.com").replace(/\/+$/, "");
     this.#onAuthFailure = param.onAuthFailure;
     this.#onAuthSuccess = param.onAuthSuccess;
     this.#tokenChangeCallback = param.tokenChangeCallback;
@@ -126,7 +128,7 @@ export class Auth {
     payload: TokenRevokPayload
   ): Promise<{ msg: string }>;
   async #post(endpoint: string, payload: any) {
-    const url = new URL(Auth.authorizationServerAddr + endpoint);
+    const url = new URL(this.#ssoBaseUrl + OAUTH_PATH + endpoint);
 
     const payloadStringified = JSON.stringify(payload);
     const options: RequestOptions = {
@@ -178,7 +180,7 @@ export class Auth {
         "Cannot initiate authorization because 'clientId', 'clientSecret' or 'redirectUri' is missing"
       );
     }
-    const url = `${Auth.authorizationServerAddr}/auth?client_id=${this.#clientId}&redirect_uri=${this.#redirectUri}&response_type=code&scope=openid%20profile%20offline_access`;
+    const url = `${this.#ssoBaseUrl}${OAUTH_PATH}/auth?client_id=${this.#clientId}&redirect_uri=${this.#redirectUri}&response_type=code&scope=openid%20profile%20offline_access`;
     redirectFn(url);
   }
 

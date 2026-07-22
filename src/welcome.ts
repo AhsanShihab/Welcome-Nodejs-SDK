@@ -26,6 +26,8 @@ export interface CmpClientConstructorParam {
     tokenGetParam?: any
   ) => any;
   enableAutoRetry?: boolean;
+  apiBaseUrl?: string;
+  ssoBaseUrl?: string;
 }
 
 export class CmpClient {
@@ -45,12 +47,13 @@ export class CmpClient {
       clientId: param.clientId,
       clientSecret: param.clientSecret,
       redirectUri: param.redirectUri,
+      ssoBaseUrl: param.ssoBaseUrl,
       onAuthFailure: param.onAuthFailure,
       onAuthSuccess: param.onAuthSuccess,
       tokenChangeCallback: param.tokenChangeCallback,
     });
 
-    const apiCaller = new APICaller(this.auth, param.enableAutoRetry || false);
+    const apiCaller = new APICaller(this.auth, param.enableAutoRetry || false, true, param.apiBaseUrl);
     this.label = new Label(apiCaller);
     this.campaign = new Campaign(apiCaller);
     this.user = new User(apiCaller);
