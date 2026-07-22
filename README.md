@@ -81,6 +81,22 @@ const cmpClient = new CmpClient(param);
   \
   This function will be called when the app updates the current tokens. You can use this function to store the updated access and refresh tokens in your database. The optional third parameter `tokenGetParam` can be a `string`, `object`, `function` or anything that your function may need.
 
+- `apiBaseUrl`
+  \
+   _type_: `string`
+  \
+  Base URL of the Optimizely CMP API server. Provide this to point the SDK at a non-default address (for example, a proxy server). A trailing slash, if present, is stripped.
+  \
+  Default: `"https://api.cmp.optimizely.com"`
+
+- `ssoBaseUrl`
+  \
+   _type_: `string`
+  \
+  Base URL of the Optimizely CMP authorization server. Provide this to point the SDK at a non-default address. A trailing slash, if present, is stripped.
+  \
+  Default: `"https://accounts.cmp.optimizely.com"`
+
 **tokenGetParam** : Above and throughout the document, you can see a parameter named `tokenGetParam`. If you use functions as the `accessToken` and/or `refreshToken` properties, and if any parameter is required for those functions to work, then the `tokenGetParam` parameter is needed to be paased. You can only ignore this optional parameter, if your token getter functions do not require any parameter.
 
 Here is a full example of using the sdk in an express application,

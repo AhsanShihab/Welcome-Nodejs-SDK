@@ -18,17 +18,19 @@ export class APICaller {
   #auth: Auth;
   #shouldConvertObjectKeyCase: boolean;
 
-  #host = "https://api.cmp.optimizely.com";
+  #apiBaseUrl: string;
   #apiVersion = "v3";
 
   constructor(
     auth: Auth,
     enableAutoRetry: boolean,
-    shouldConvertObjectKeyCase: boolean = true
+    shouldConvertObjectKeyCase: boolean = true,
+    apiBaseUrl: string = "https://api.cmp.optimizely.com"
   ) {
     this.#auth = auth;
     this.#shouldRetry = enableAutoRetry;
     this.#shouldConvertObjectKeyCase = shouldConvertObjectKeyCase;
+    this.#apiBaseUrl = apiBaseUrl.replace(/\/+$/, "");
   }
 
   #formError(body: ErrorResponseBody, code?: number) {
@@ -61,7 +63,7 @@ export class APICaller {
     if (endpoint.startsWith("https")) {
       url = new URL(endpoint);
     } else {
-      url = new URL(this.#host + "/" + this.#apiVersion + endpoint);
+      url = new URL(this.#apiBaseUrl + "/" + this.#apiVersion + endpoint);
     }
     const payloadStringified = JSON.stringify(
       this.#shouldConvertObjectKeyCase
