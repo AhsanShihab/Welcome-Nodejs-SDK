@@ -1,63 +1,22 @@
-import { APICaller } from "../../modules/api-caller";
+import { Resource, ResourceCtor } from "../resource";
 import { FolderData, IFolder, IFolderList } from "./types";
+// Type-only import breaks the runtime circular dep with folder-list.ts.
+// The actual FolderList constructor is registered in `linkTargets` from
+// libray-objects/index.ts after both modules have loaded.
+import type { FolderList } from "./folder-list";
 
-type Ctor<T> = {
-  new (data: any, apiCaller: APICaller, tokenGetParam: any): T;
-};
+export interface Folder extends Omit<IFolder, "getChildFolders" | "getParentFolder" | "getRelatedLinks"> {}
+export class Folder extends Resource<FolderData> implements IFolder {
+  static dateFields = ["createdAt", "modifiedAt"] as const;
+  static linkTargets: Record<string, ResourceCtor> = { parentFolder: Folder };
 
-export class Folder implements IFolder {
-  #apiCaller: APICaller;
-  #tokenGetParam: any;
-  #links: FolderData["links"];
-  createdAt!: Date;
-  modifiedAt!: Date;
-  id!: string;
-  name!: string;
-  parentFolderId!: string | null;
-  path!: string;
-  getChildFolders!: () => Promise<IFolderList>;
-
-  constructor(data: FolderData, apiCaller: APICaller, tokenGetParam?: any) {
-    const { links, createdAt, modifiedAt, ...other } = data;
-    this.#links = links;
-    this.#apiCaller = apiCaller;
-    this.#tokenGetParam = tokenGetParam;
-    this.createdAt = new Date(createdAt);
-    this.modifiedAt = new Date(modifiedAt);
-    Object.assign(this, other);
+  // `links.parent_folder` is `string | null` per spec (nullable).
+  async getParentFolder(): Promise<Folder | null> {
+    return this._follow<Folder>("parentFolder");
   }
 
-  toJSON() {
-    return {
-      ...this,
-      createdAt: this.createdAt.toISOString(),
-      modifiedAt: this.modifiedAt.toISOString(),
-    }
-  }
-
-  getRelatedLinks() {
-    return this.#links;
-  }
-
-  async getParentFolder() {
-    if (!this.#links.parentFolder) return null;
-    const response = await this.#apiCaller.get(
-      this.#links.parentFolder,
-      this.#tokenGetParam
-    );
-    return new Folder(
-      response as FolderData,
-      this.#apiCaller,
-      this.#tokenGetParam
-    );
-  }
-
-  async _getChildFolders<T>(folderListObjectConstructor: Ctor<T>) {
-    const response = await this.#apiCaller.get(this.#links.childFolders, this.#tokenGetParam);
-    return new folderListObjectConstructor(
-      response,
-      this.#apiCaller,
-      this.#tokenGetParam
-    );
+  // `links.child_folders` is required non-nullable per spec.
+  async getChildFolders(): Promise<IFolderList> {
+    return this._followRequired<FolderList>("childFolders");
   }
 }

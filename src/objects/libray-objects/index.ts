@@ -1,9 +1,10 @@
 import { Folder } from "./folder";
 import { FolderList } from "./folder-list";
 
-Folder.prototype.getChildFolders = async function (): Promise<FolderList> {
-  return this._getChildFolders(FolderList);
-};
+// Register FolderList as the linkTarget for `childFolders` after both modules
+// have loaded. folder.ts imports FolderList as a type only, so there's no
+// runtime circular-dep hazard.
+Folder.linkTargets.childFolders = FolderList;
 
 export { Folder, FolderList };
 export { LibraryArticle } from "./library-article";

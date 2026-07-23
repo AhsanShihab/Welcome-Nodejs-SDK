@@ -82,7 +82,7 @@ export class Library {
       payload,
       tokenGetParam
     );
-    return new LibraryAsset(response as LibraryAssetData);
+    return new LibraryAsset(response as LibraryAssetData, this.#apiCaller, tokenGetParam);
   }
 
   async addAssetVersion(
@@ -99,7 +99,7 @@ export class Library {
       payload,
       tokenGetParam
     );
-    return new LibraryAssetVersion(response as LibraryAssetVersionData);
+    return new LibraryAssetVersion(response as LibraryAssetVersionData, this.#apiCaller, tokenGetParam);
   }
 
   async getArticle(articleId: string, tokenGetParam?: any) {
@@ -107,7 +107,7 @@ export class Library {
       `/articles/${articleId}`,
       tokenGetParam
     );
-    return new LibraryArticle(response as LibraryArticleData);
+    return new LibraryArticle(response as LibraryArticleData, this.#apiCaller, tokenGetParam);
   }
 
   async getImage(imageId: string, tokenGetParam?: any) {
@@ -115,7 +115,7 @@ export class Library {
       `/images/${imageId}`,
       tokenGetParam
     );
-    return new LibraryImage(response as LibraryImageData);
+    return new LibraryImage(response as LibraryImageData, this.#apiCaller, tokenGetParam);
   }
 
   async updateImage(
@@ -128,7 +128,7 @@ export class Library {
       update,
       tokenGetParam
     );
-    return new LibraryImage(response as LibraryImageData);
+    return new LibraryImage(response as LibraryImageData, this.#apiCaller, tokenGetParam);
   }
 
   async deleteImage(imageId: string, tokenGetParam?: any) {
@@ -140,7 +140,7 @@ export class Library {
       `/videos/${videoId}`,
       tokenGetParam
     );
-    return new LibraryVideo(response as LibraryVideoData);
+    return new LibraryVideo(response as LibraryVideoData, this.#apiCaller, tokenGetParam);
   }
 
   async updateVideo(
@@ -153,7 +153,7 @@ export class Library {
       update,
       tokenGetParam
     );
-    return new LibraryVideo(response as LibraryVideoData);
+    return new LibraryVideo(response as LibraryVideoData, this.#apiCaller, tokenGetParam);
   }
 
   async deleteVideo(videoId: string, tokenGetParam?: any) {
@@ -165,7 +165,7 @@ export class Library {
       `/raw-files/${rawFileId}`,
       tokenGetParam
     );
-    return new LibraryRawFile(response as LibraryRawFileData);
+    return new LibraryRawFile(response as LibraryRawFileData, this.#apiCaller, tokenGetParam);
   }
 
   async updateRawFile(
@@ -178,7 +178,7 @@ export class Library {
       update,
       tokenGetParam
     );
-    return new LibraryRawFile(response as LibraryRawFileData);
+    return new LibraryRawFile(response as LibraryRawFileData, this.#apiCaller, tokenGetParam);
   }
 
   async deleteRawFile(rawFileId: string, tokenGetParam?: any) {
