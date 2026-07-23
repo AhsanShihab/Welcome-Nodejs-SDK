@@ -10,7 +10,11 @@ export interface CampaignBriefData extends BriefBaseData {
 export class CampaignBrief extends BriefBase {
   #links: CampaignBriefData["links"];
 
-  constructor(data: CampaignBriefData) {
+  constructor(
+    data: CampaignBriefData,
+    _apiCaller?: unknown,
+    _tokenGetParam?: unknown
+  ) {
     const { links, ...baseData } = data;
     super(baseData);
     this.#links = links;

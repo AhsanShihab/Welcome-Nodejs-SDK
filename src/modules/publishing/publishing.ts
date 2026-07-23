@@ -23,7 +23,7 @@ export class Publishing {
       `/publishing-events/${eventId}`,
       tokenGetParam
     );
-    return new PublishingEvent(eventData as IPublishingEventData);
+    return new PublishingEvent(eventData as IPublishingEventData, this.#apiCaller, tokenGetParam);
   }
 
   async getPublishingMetadata(eventId: string, tokenGetParam?: any) {
@@ -33,7 +33,7 @@ export class Publishing {
     );
     return {
       data: (data as {data: IPublishingMetadataForAssetData[]}).data.map(
-        (pmd) => new PublishingMetadataForAsset(pmd)
+        (pmd) => new PublishingMetadataForAsset(pmd, this.#apiCaller, tokenGetParam)
       ),
     };
   }
@@ -50,7 +50,7 @@ export class Publishing {
     )) as IAddPostMetadataResponse;
 
     return {
-      data: data.data.map((pmd) => new PublishingMetadataForAsset(pmd)),
+      data: data.data.map((pmd) => new PublishingMetadataForAsset(pmd, this.#apiCaller, tokenGetParam)),
       errors: data.errors,
     };
   }
@@ -66,7 +66,9 @@ export class Publishing {
       tokenGetParam
     );
     return new PublishingMetadataForAsset(
-      data as IPublishingMetadataForAssetData
+      data as IPublishingMetadataForAssetData,
+      this.#apiCaller,
+      tokenGetParam
     );
   }
 }

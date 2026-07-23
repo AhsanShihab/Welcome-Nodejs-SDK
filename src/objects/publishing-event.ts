@@ -1,3 +1,5 @@
+import { Resource, ResourceCtor } from "./resource";
+
 interface IPublishingMetadata {
   id: string;
   links: {
@@ -5,18 +7,10 @@ interface IPublishingMetadata {
   };
 }
 
-class PublishingMetadata {
-  #links: IPublishingMetadata["links"];
+export interface PublishingMetadata {
   id: string;
-
-  constructor(data: IPublishingMetadata) {
-    this.#links = data.links;
-    this.id = data.id;
-  }
-  getRelatedLinks() {
-    return this.#links;
-  }
 }
+export class PublishingMetadata extends Resource<IPublishingMetadata> {}
 
 interface IAsset {
   id: string;
@@ -27,44 +21,30 @@ interface IAsset {
   };
 }
 
-class Asset {
-  #links: IAsset["links"];
+export interface Asset {
   id: string;
   type: IAsset["type"];
   publishingMetadata: PublishingMetadata[];
-  constructor(data: IAsset) {
-    this.#links = data.links;
-    this.id = data.id;
-    this.type = data.type;
-    this.publishingMetadata = data.publishingMetadata.map(
-      (pubMetadata) => new PublishingMetadata(pubMetadata)
-    );
-  }
-  getRelatedLinks() {
-    return this.#links;
-  }
+}
+export class Asset extends Resource<IAsset> {
+  static nested: Record<string, ResourceCtor> = {
+    publishingMetadata: PublishingMetadata,
+  };
 }
 
 export interface IPublishingEventData {
   id: string;
   assets: IAsset[];
-
   links: {
     self: string;
     publishingMetadata: string;
   };
 }
 
-export class PublishingEvent {
-  #links: IPublishingEventData["links"];
+export interface PublishingEvent {
   id: string;
   assets: Asset[];
-  constructor(data: IPublishingEventData) {
-    this.#links = data.links;
-    this.id = data.id;
-    this.assets = data.assets.map((ast) => new Asset(ast));
-  }
-  getRelatedLinks() {
-    return this.#links;
-  }
+}
+export class PublishingEvent extends Resource<IPublishingEventData> {
+  static nested: Record<string, ResourceCtor> = { assets: Asset };
 }

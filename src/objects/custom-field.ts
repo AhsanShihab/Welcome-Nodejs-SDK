@@ -1,4 +1,4 @@
-import { APICaller } from "../modules/api-caller";
+import { Resource } from "./resource";
 import { buildQueryString } from "../util";
 import { PaginationOption } from "./common/types";
 
@@ -30,42 +30,13 @@ export interface CustomFieldData extends Common {
 }
 
 export interface CustomField extends Common {}
-export class CustomField {
-  #apiCaller: APICaller;
-  #tokenGetParam: any;
-  #links!: CustomFieldData["links"];
-
-  constructor(
-    data: CustomFieldData,
-    apiCaller: APICaller,
-    tokenGetParam?: any
-  ) {
-    this.#apiCaller = apiCaller;
-    this.#tokenGetParam = tokenGetParam;
-    this.#loadData(data);
-  }
-
-  #loadData(data: CustomFieldData) {
-    const { links, ...other } = data;
-    this.#links = links;
-    Object.assign(this, other);
-  }
-
-  getRelatedLinks() {
-    return this.#links;
-  }
-
+export class CustomField extends Resource<CustomFieldData> {
+  // `links.choices` is `string | null` per spec (nullable). Returns raw response
+  // for now — a CustomFieldChoiceList wrapper is a follow-up.
   async getChoices(option: PaginationOption = {}) {
-    if (!this.#links.choices) {
-      return null;
-    }
-    let url = this.#links.choices;
-    let query = buildQueryString(option);
-    const response = await this.#apiCaller.get(
-      url + query,
-      this.#tokenGetParam
-    );
-    // TODO: List object
-    return response;
+    const url = this._resolveLinkUrl("choices");
+    if (url === null) return null;
+    const query = buildQueryString(option);
+    return this._apiCaller.get(url + query, this._tokenGetParam);
   }
 }

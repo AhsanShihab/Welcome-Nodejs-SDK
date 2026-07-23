@@ -1,3 +1,5 @@
+import { Resource } from "./resource";
+
 export interface IPublishingMetadataForAssetData {
   id: string;
   assetId: string;
@@ -14,34 +16,19 @@ export interface IPublishingMetadataForAssetData {
   };
 }
 
-export class PublishingMetadataForAsset {
-  #links: IPublishingMetadataForAssetData["links"];
-  id!: string;
-  assetId!: string;
-  assetType!: IPublishingMetadataForAssetData["assetType"];
-  status!: IPublishingMetadataForAssetData["status"];
-  statusMessage!: string;
-  locale!: string;
-  publicUrl!: string;
-  publishingDestinationUpdatedAt: Date | null;
-  constructor(data: IPublishingMetadataForAssetData) {
-    const { links, publishingDestinationUpdatedAt, ...other } = data;
-    Object.assign(this, other);
-    this.#links = links;
-    this.publishingDestinationUpdatedAt = publishingDestinationUpdatedAt
-      ? new Date(publishingDestinationUpdatedAt)
-      : null;
-  }
-  getRelatedLinks() {
-    return this.#links;
-  }
+interface Common {
+  id: string;
+  assetId: string;
+  assetType: IPublishingMetadataForAssetData["assetType"];
+  status: IPublishingMetadataForAssetData["status"];
+  statusMessage: string | null;
+  locale: string | null;
+  publicUrl: string | null;
+}
 
-  toJSON() {
-    return {
-      ...this,
-      publishingDestinationUpdatedAt: this.publishingDestinationUpdatedAt
-        ? this.publishingDestinationUpdatedAt.toISOString()
-        : null,
-    };
-  }
+export interface PublishingMetadataForAsset extends Common {
+  publishingDestinationUpdatedAt: Date | null;
+}
+export class PublishingMetadataForAsset extends Resource<IPublishingMetadataForAssetData> {
+  static dateFields = ["publishingDestinationUpdatedAt"] as const;
 }

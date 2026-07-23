@@ -1,6 +1,6 @@
-import { APICaller } from "../modules/api-caller";
+import { Resource } from "./resource";
 
-interface LabelGroupData {
+export interface LabelGroupData {
   id: string;
   name: string;
   sourceOrgType: string;
@@ -11,8 +11,4 @@ interface LabelGroupData {
 }
 
 export interface LabelGroup extends LabelGroupData {}
-export class LabelGroup {
-  constructor(data: LabelGroupData) {
-    Object.assign(this, data);
-  }
-}
+export class LabelGroup extends Resource<LabelGroupData> {}

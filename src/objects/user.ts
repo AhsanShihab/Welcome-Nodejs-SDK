@@ -1,3 +1,5 @@
+import { Resource } from "./resource";
+
 export interface UserData {
   id: string;
   firstName: string;
@@ -9,17 +11,5 @@ export interface UserData {
   };
 }
 
-export interface User extends UserData {}
-export class User {
-  #links: UserData['links'];
-
-  constructor(data: UserData) {
-    const { links, ...other } = data;
-    this.#links = links;
-    Object.assign(this, other);
-  }
-
-  getRelatedLinks() {
-    return this.#links;
-  }
-}
+export interface User extends Omit<UserData, "links"> {}
+export class User extends Resource<UserData> {}
