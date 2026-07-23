@@ -1,3 +1,5 @@
+import { Resource } from "./resource";
+
 export interface AttachmentData {
   id: string;
   name: string;
@@ -5,8 +7,4 @@ export interface AttachmentData {
 }
 
 export interface Attachment extends AttachmentData {}
-export class Attachment {
-  constructor(data: AttachmentData) {
-    Object.assign(this, data);
-  }
-}
+export class Attachment extends Resource<AttachmentData> {}

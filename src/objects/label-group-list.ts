@@ -1,20 +1,9 @@
-import { APICaller } from "../modules/api-caller";
-import { ListData } from "./base-list-data";
-import { LabelGroup } from "./label-group";
+import { LabelGroup, LabelGroupData } from "./label-group";
 import { PaginatedResponse } from "./common/types";
+import { createListClass } from "./list-factory";
 
 export interface LabelGroupListData extends PaginatedResponse {
-  data: Array<LabelGroup>;
+  data: Array<LabelGroupData>;
 }
 
-export class LabelGroupList extends ListData {
-  data: Array<LabelGroup>;
-  constructor(
-    data: LabelGroupListData,
-    apiCaller: APICaller,
-    tokenGetParam?: any
-  ) {
-    super(data, apiCaller, tokenGetParam);
-    this.data = data.data.map((labelGroup) => new LabelGroup(labelGroup));
-  }
-}
+export class LabelGroupList extends createListClass(LabelGroup) {}

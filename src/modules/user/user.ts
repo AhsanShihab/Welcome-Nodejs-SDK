@@ -13,7 +13,7 @@ export class User {
       "/users/" + userId,
       tokenGetParam
     );
-    const user = new UserModel(userData);
+    const user = new UserModel(userData, this.#apiCaller, tokenGetParam);
     return user;
   }
 
@@ -22,7 +22,7 @@ export class User {
       "/users?email=" + email,
       tokenGetParam
     );
-    const user = new UserModel(userData);
+    const user = new UserModel(userData, this.#apiCaller, tokenGetParam);
     return user;
   }
 }
