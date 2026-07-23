@@ -1,13 +1,12 @@
-import { APICaller } from "../modules/api-caller";
-import { buildQueryString } from "../util";
+import { Resource, ResourceCtor } from "./resource";
 import { TaskStep, TaskStepData } from "./task-step";
-import { TaskBrief, TaskBriefData } from "./task-brief";
-import { CustomFieldList, CustomFieldListData } from "./custom-field-list";
-import { TaskAsset, TaskAssetData } from "./task-generic-asset";
-import { TaskAssetList, TaskAssetListData } from "./task-asset-list";
+import { TaskBrief } from "./task-brief";
+import { CustomFieldList } from "./custom-field-list";
+import { TaskAsset } from "./task-generic-asset";
+import { TaskAssetList } from "./task-asset-list";
 import { UploadedFile } from "./uploaded-file";
-import { AttachmentList, AttachmentListData } from "./attachment-list";
-import { Campaign, CampaignData } from "./campaign";
+import { AttachmentList } from "./attachment-list";
+import { Campaign } from "./campaign";
 import { LabelResponse, LabelPayload, PaginationOption } from "./common/types";
 
 interface Common {
@@ -42,130 +41,56 @@ export interface Task extends Common {
   dueAt: Date | null;
   steps: TaskStep[];
 }
-export class Task {
-  #apiCaller: APICaller;
-  #tokenGetParam: any;
-  #links!: TaskData["links"];
-
-  constructor(data: TaskData, apiCaller: APICaller, tokenGetParam?: any) {
-    this.#apiCaller = apiCaller;
-    this.#tokenGetParam = tokenGetParam;
-    this.#loadData(data);
-  }
-
-  #loadData(data: TaskData) {
-    const { startAt, dueAt, links, steps, ...other } = data;
-    this.startAt = startAt ? new Date(startAt) : null;
-    this.dueAt = dueAt ? new Date(dueAt) : null;
-    this.#links = data.links;
-    this.steps = steps.map(
-      (step) => new TaskStep(this.#apiCaller, step, this.#tokenGetParam)
-    );
-    Object.assign(this, other);
-  }
-
-  getRelatedLinks() {
-    return this.#links;
-  }
-
-  toJSON() {
-    return {
-      ...this,
-      startAt: this.startAt ? this.startAt.toISOString() : null,
-      dueAt: this.dueAt ? this.dueAt.toISOString() : null,
-      steps: this.steps.map((step) => step.toJSON()),
-    };
-  }
+export class Task extends Resource<TaskData> {
+  static dateFields = ["startAt", "dueAt"] as const;
+  static nested: Record<string, ResourceCtor> = { steps: TaskStep };
+  static linkTargets: Record<string, ResourceCtor> = {
+    brief: TaskBrief,
+    campaign: Campaign,
+  };
+  static listLinkTargets: Record<string, ResourceCtor> = {
+    customFields: CustomFieldList,
+    assets: TaskAssetList,
+    attachments: AttachmentList,
+  };
 
   async update(payload: { labels: LabelPayload[] }) {
-    const response = await this.#apiCaller.patch(
-      this.#links.self,
-      payload,
-      this.#tokenGetParam
-    );
-    this.#loadData(response as TaskData);
+    await this._updateSelf(payload);
   }
 
-  async getBrief() {
-    if (!this.#links.brief) {
-      return null;
-    }
-    const response = (await this.#apiCaller.get(
-      this.#links.brief,
-      this.#tokenGetParam
-    )) as TaskBriefData;
-    return new TaskBrief(response);
+  // `links.brief` is `string | null` per spec (nullable).
+  async getBrief(): Promise<TaskBrief | null> {
+    return this._follow<TaskBrief>("brief");
   }
 
-  async getCampaign() {
-    const response = await this.#apiCaller.get(
-      this.#links.campaign,
-      this.#tokenGetParam
-    );
-    return new Campaign(
-      response as CampaignData,
-      this.#apiCaller,
-      this.#tokenGetParam
-    );
+  // `links.campaign` is required non-nullable per spec.
+  async getCampaign(): Promise<Campaign> {
+    return this._followRequired<Campaign>("campaign");
   }
 
-  async getCustomFields(option: PaginationOption = {}) {
-    if (!this.#links.customFields) {
-      return null;
-    }
-    const url = this.#links.customFields;
-    const query = buildQueryString(option);
-    const response = await this.#apiCaller.get(
-      url + query,
-      this.#tokenGetParam
-    );
-    return new CustomFieldList(
-      response as CustomFieldListData,
-      this.#apiCaller,
-      this.#tokenGetParam
+  // `links.customFields` is `string | null` per spec (nullable).
+  async getCustomFields(
+    option: PaginationOption = {}
+  ): Promise<CustomFieldList | null> {
+    return this._followList<CustomFieldList>("customFields", option);
+  }
+
+  // `links.assets` is required non-nullable per spec.
+  async getAssets(option: PaginationOption = {}): Promise<TaskAssetList> {
+    return this._followListRequired<TaskAssetList>("assets", option);
+  }
+
+  async addAsset(uploadedFile: UploadedFile): Promise<TaskAsset> {
+    return this._postToLink<TaskAsset>(
+      "assets",
+      { key: uploadedFile.key, title: uploadedFile.title },
+      TaskAsset as ResourceCtor<TaskAsset>
     );
   }
 
-  async getAssets(option: PaginationOption = {}) {
-    const query = buildQueryString(option);
-    const response = await this.#apiCaller.get(
-      this.#links.assets + query,
-      this.#tokenGetParam
-    );
-    return new TaskAssetList(
-      response as TaskAssetListData,
-      this.#apiCaller,
-      this.#tokenGetParam
-    );
-  }
-
-  async addAsset(uploadedFile: UploadedFile) {
-    const response = await this.#apiCaller.post(
-      this.#links.assets,
-      {
-        key: uploadedFile.key,
-        title: uploadedFile.title,
-      },
-      this.#tokenGetParam
-    );
-
-    return new TaskAsset(
-      response as TaskAssetData,
-      this.#apiCaller,
-      this.#tokenGetParam
-    );
-  }
-
-  async getAttachments(option: PaginationOption = {}) {
-    const query = buildQueryString(option);
-    const response = await this.#apiCaller.get(
-      this.#links.attachments + query,
-      this.#tokenGetParam
-    );
-    return new AttachmentList(
-      response as AttachmentListData,
-      this.#apiCaller,
-      this.#tokenGetParam
-    );
+  // `links.attachments` is required non-nullable per spec.
+  async getAttachments(option: PaginationOption = {}): Promise<AttachmentList> {
+    return this._followListRequired<AttachmentList>("attachments", option);
   }
 }
+

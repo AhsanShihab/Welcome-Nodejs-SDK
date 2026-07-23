@@ -1,3 +1,4 @@
+import { Resource } from "./resource";
 import { LabelResponse } from "./common/types";
 
 interface Common {
@@ -27,27 +28,6 @@ export interface TaskArticle extends Common {
   createdAt: Date;
   modifiedAt: Date;
 }
-
-export class TaskArticle {
-  #links: TaskArticleData["links"];
-
-  constructor(data: TaskArticleData) {
-    const { createdAt, modifiedAt, links, ...other } = data;
-    this.createdAt = new Date(createdAt);
-    this.modifiedAt = new Date(modifiedAt);
-    this.#links = links;
-    Object.assign(this, other);
-  }
-
-  getRelatedLinks() {
-    return this.#links;
-  }
-
-  toJSON() {
-    return {
-      ...this,
-      createdAt: this.createdAt.toISOString(),
-      modifiedAt: this.modifiedAt.toISOString(),
-    };
-  }
+export class TaskArticle extends Resource<TaskArticleData> {
+  static dateFields = ["createdAt", "modifiedAt"] as const;
 }

@@ -421,7 +421,11 @@ export class Task {
       `/tasks/${taskId}/articles/${articleId}`,
       tokenGetParam
     );
-    return new TaskArticle(response as TaskArticleData);
+    return new TaskArticle(
+      response as TaskArticleData,
+      this.#apiCaller,
+      tokenGetParam
+    );
   }
 
   async getTaskImage(taskId: string, imageId: string, tokenGetParam?: any) {
@@ -429,7 +433,11 @@ export class Task {
       `/tasks/${taskId}/images/${imageId}`,
       tokenGetParam
     );
-    return new TaskImage(response as TaskImageData);
+    return new TaskImage(
+      response as TaskImageData,
+      this.#apiCaller,
+      tokenGetParam
+    );
   }
 
   async getTaskVideo(taskId: string, videoId: string, tokenGetParam?: any) {
@@ -437,7 +445,11 @@ export class Task {
       `/tasks/${taskId}/videos/${videoId}`,
       tokenGetParam
     );
-    return new TaskVideo(response as TaskVideoData);
+    return new TaskVideo(
+      response as TaskVideoData,
+      this.#apiCaller,
+      tokenGetParam
+    );
   }
 
   async getTaskRawFile(taskId: string, rawFileId: string, tokenGetParam?: any) {
@@ -445,6 +457,10 @@ export class Task {
       `/tasks/${taskId}/raw-files/${rawFileId}`,
       tokenGetParam
     );
-    return new TaskRawFile(response as TaskRawFileData);
+    return new TaskRawFile(
+      response as TaskRawFileData,
+      this.#apiCaller,
+      tokenGetParam
+    );
   }
 }
