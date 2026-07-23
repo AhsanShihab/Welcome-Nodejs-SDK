@@ -1,6 +1,6 @@
 import { TaskAssetBase, TaskAssetBaseData } from "./base-task-asset";
 
-export interface TaskImageData extends TaskAssetBaseData {
+interface Extra {
   fileSize: number;
   imageResolution: {
     height: number;
@@ -9,25 +9,6 @@ export interface TaskImageData extends TaskAssetBaseData {
   url: string;
 }
 
-export class TaskImage extends TaskAssetBase {
-  fileSize: number;
-  imageResolution: {
-    height: number;
-    width: number;
-  };
-  url: string;
-
-  constructor(data: TaskImageData) {
-    super(data);
-    this.fileSize = data.fileSize;
-    this.imageResolution = data.imageResolution;
-    this.url = data.url;
-  }
-
-  toJSON() {
-    return {
-      ...super.toJSON(),
-      ...this,
-    };
-  }
-}
+export interface TaskImageData extends TaskAssetBaseData, Extra {}
+export interface TaskImage extends Extra {}
+export class TaskImage extends TaskAssetBase {}

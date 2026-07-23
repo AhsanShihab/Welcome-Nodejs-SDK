@@ -1,24 +1,10 @@
 import { TaskAssetBase, TaskAssetBaseData } from "./base-task-asset";
 
-export interface TaskVideoData extends TaskAssetBaseData {
+interface Extra {
   fileSize: number;
   url: string;
 }
 
-export class TaskVideo extends TaskAssetBase {
-  fileSize: number;
-  url: string;
-
-  constructor(data: TaskVideoData) {
-    super(data);
-    this.fileSize = data.fileSize;
-    this.url = data.url;
-  }
-
-  toJSON() {
-    return {
-      ...super.toJSON(),
-      ...this,
-    };
-  }
-}
+export interface TaskVideoData extends TaskAssetBaseData, Extra {}
+export interface TaskVideo extends Extra {}
+export class TaskVideo extends TaskAssetBase {}
