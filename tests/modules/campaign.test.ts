@@ -1,6 +1,7 @@
 import { Campaign } from "../../src/modules/campaign";
 import { Campaign as CampaignObject } from "../../src/objects/campaign";
 import { CampaignBrief } from "../../src/objects/campaign-brief";
+import { User } from "../../src/objects/user";
 import { APICaller } from "../../src/modules/api-caller";
 import { Auth } from "../../src/modules/auth";
 import * as nock from "nock";
@@ -158,6 +159,126 @@ describe("Campaign module", () => {
           value: ["option 1"],
         },
       ],
+    });
+  });
+
+  describe("Campaign object HATEOAS methods", () => {
+    const baseWire = () => ({
+      id: "c1",
+      title: "Camp",
+      description: null,
+      start_date: null,
+      end_date: null,
+      is_hidden: false,
+      status: "On Track",
+      reference_id: "CPN-1",
+      budget: null,
+      labels: [],
+      links: {
+        self: "https://api.cmp.optimizely.com/v3/campaigns/c1",
+        brief: null as string | null,
+        owner: null as string | null,
+        parent_campaign: null as string | null,
+        child_campaigns: [] as string[],
+      },
+    });
+
+    const loadCampaign = async () => {
+      nock(WELCOME_API_BASE_URL).get("/campaigns/c1").reply(200, baseWire());
+      return campaignModule.getCampaignById("c1", tokenGetParam);
+    };
+
+    it("getBrief returns null when links.brief is null (nullable per spec)", async () => {
+      const c = await loadCampaign();
+      await expect(c.getBrief()).resolves.toBeNull();
+    });
+
+    it("getBrief follows the link when non-null", async () => {
+      const wire = baseWire();
+      wire.links.brief =
+        "https://api.cmp.optimizely.com/v3/campaigns/c1/brief";
+      nock(WELCOME_API_BASE_URL).get("/campaigns/c1").reply(200, wire);
+      const c = await campaignModule.getCampaignById("c1", tokenGetParam);
+
+      nock(WELCOME_API_BASE_URL).get("/campaigns/c1/brief").reply(200, {
+        type: "text",
+        title: "The brief",
+        template: null,
+        fields: [],
+        links: {
+          self: "https://api.cmp.optimizely.com/v3/campaigns/c1/brief",
+          campaign: "https://api.cmp.optimizely.com/v3/campaigns/c1",
+        },
+      });
+      const brief = await c.getBrief();
+      expect(brief).toBeInstanceOf(CampaignBrief);
+    });
+
+    it("getOwner returns null when links.owner is null", async () => {
+      const c = await loadCampaign();
+      await expect(c.getOwner()).resolves.toBeNull();
+    });
+
+    it("getOwner follows the link when non-null and returns a User", async () => {
+      const wire = baseWire();
+      wire.links.owner =
+        "https://api.cmp.optimizely.com/v3/users/u1";
+      nock(WELCOME_API_BASE_URL).get("/campaigns/c1").reply(200, wire);
+      const c = await campaignModule.getCampaignById("c1", tokenGetParam);
+
+      nock(WELCOME_API_BASE_URL).get("/users/u1").reply(200, {
+        id: "u1",
+        first_name: "Ada",
+        last_name: "Lovelace",
+        full_name: "Ada Lovelace",
+        email: null,
+        links: {
+          self: "https://api.cmp.optimizely.com/v3/users/u1",
+        },
+      });
+      const owner = await c.getOwner();
+      expect(owner).toBeInstanceOf(User);
+      expect(owner?.fullName).toBe("Ada Lovelace");
+    });
+
+    it("getParentCampaign returns null when links.parent_campaign is null", async () => {
+      const c = await loadCampaign();
+      await expect(c.getParentCampaign()).resolves.toBeNull();
+    });
+
+    it("getChildCampaigns returns [] when the array is empty", async () => {
+      const c = await loadCampaign();
+      await expect(c.getChildCampaigns()).resolves.toEqual([]);
+    });
+
+    it("getChildCampaigns fetches each URL and wraps as Campaign", async () => {
+      const wire = baseWire();
+      wire.links.child_campaigns = [
+        "https://api.cmp.optimizely.com/v3/campaigns/c2",
+      ];
+      nock(WELCOME_API_BASE_URL).get("/campaigns/c1").reply(200, wire);
+      const c = await campaignModule.getCampaignById("c1", tokenGetParam);
+
+      const child = baseWire();
+      child.id = "c2";
+      child.title = "Child";
+      child.links.self = "https://api.cmp.optimizely.com/v3/campaigns/c2";
+      nock(WELCOME_API_BASE_URL).get("/campaigns/c2").reply(200, child);
+
+      const children = await c.getChildCampaigns();
+      expect(children).toHaveLength(1);
+      expect(children[0]).toBeInstanceOf(CampaignObject);
+      expect(children[0].title).toBe("Child");
+    });
+
+    it("getChildCampaigns throws if the API returns non-string entries", async () => {
+      const wire = baseWire();
+      (wire.links.child_campaigns as unknown[]) = [123];
+      nock(WELCOME_API_BASE_URL).get("/campaigns/c1").reply(200, wire);
+      const c = await campaignModule.getCampaignById("c1", tokenGetParam);
+      await expect(c.getChildCampaigns()).rejects.toThrow(
+        /'childCampaigns' entry expected a string, got number/
+      );
     });
   });
 });
