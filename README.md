@@ -161,6 +161,18 @@ Learn more about using the SDK in the full [API Reference](./docs)
 - [Objects](docs/objects/README.md)
 - [Errors](docs/errors/README.md)
 
+## Response validation
+
+The SDK treats the [Optimizely CMP OpenAPI specification](https://docs.developers.optimizely.com/content-marketing-platform/reference/api-reference) as the source of truth for response shapes. When the API returns a response that violates the spec — a required link key missing from `links`, a `null` value where the spec marks the field non-nullable, or a wrong-typed date field — the SDK throws a `TypeError` or `Error` describing the violation rather than silently coercing or falling back to a default.
+
+For example:
+
+- Following a nullable link (e.g. `task.getBrief()` when `links.brief` is `null` per spec) returns `null` normally.
+- Following a non-nullable link (e.g. `task.getCampaign()`) throws if the API returns `null` for that link.
+- Reading a date field like `task.startAt` normally yields a `Date` or `null`; if the API returns an unexpected type (e.g. a number), the SDK throws while constructing the resource.
+
+If you encounter these errors in production, the failure is on the server side — the SDK is surfacing a contract break so you can catch it quickly rather than debug a downstream `undefined`.
+
 ## About <img src="docs/experimental-badge.svg" alt="experimental-badge" /> badge
 
 In the detailed documents, you may see some of the methods have an <img src="docs/experimental-badge.svg" alt="experimental-badge" /> badge. These methods are based on experimental APIs. Experimental APIs provide early access to APIs that are currently under development. The documentation may highlight new features, new data properties and data models, new filters, and other features specific to the new API. Our intention in providing you with early access to the documentation for these APIs in the experimental stage is that you may plan for implementing them in the near future and provide us with necessary feedback to meet your needs. These APIs are most often NOT operational and the documentation is subject to change frequently from the time the documentation is available to the time the APIs are fully released. Experimental APIs will generally require testing and development on your own applications before relying on them in your stable production environments
