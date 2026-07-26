@@ -147,7 +147,7 @@ export class APICaller {
         reject(err.message);
       });
 
-      if (payloadStringified) {
+      if (["POST", "PUT", "PATCH"].includes(method)) {
         req.write(payloadStringified);
       }
       req.end();
