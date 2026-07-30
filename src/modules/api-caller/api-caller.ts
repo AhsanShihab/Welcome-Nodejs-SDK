@@ -102,7 +102,12 @@ export class APICaller {
         res.on("end", async () => {
           let responseBody = {};
           if (data) {
-            responseBody = JSON.parse(data);
+            try {
+              responseBody = JSON.parse(data);
+            } catch (err) {
+              reject(err);
+              return;
+            }
           }
 
           responseBody = this.#shouldConvertObjectKeyCase
@@ -114,16 +119,29 @@ export class APICaller {
           }
           if (statusCode === 302) {
             const redirectTo = res.headers.location;
-            const dataFromRedirected = await this.#sendRequest(
-              redirectTo!,
-              tokenGetParam
-            );
-            resolve(dataFromRedirected);
-            return;
+            if (!redirectTo) {
+              reject(
+                new Error(
+                  `Received a 302 from ${url.toString()} without a Location header`
+                )
+              );
+              return;
+            }
+            try {
+              const dataFromRedirected = await this.#sendRequest(
+                redirectTo,
+                tokenGetParam
+              );
+              resolve(dataFromRedirected);
+              return;
+            } catch (err) {
+              reject(err);
+              return;
+            }
           }
           if (statusCode == 401 && this.#shouldRetry && !isRetry) {
-            await this.#auth.rotateTokens(tokenGetParam);
             try {
+              await this.#auth.rotateTokens(tokenGetParam);
               const res = await this.#sendRequest(
                 endpoint,
                 tokenGetParam,
