@@ -201,6 +201,97 @@ describe("APICaller module", () => {
 
     it.each([
       [400, BadRequest],
+      [403, Forbidden],
+      [404, NotFound],
+      [422, UnprocessableEntity],
+    ])(
+      "should reject with the error from the redirect target when a followed redirect fails with %s",
+      async (code, errorClass) => {
+        const scope1 = nock(WELCOME_API_BASE_URL, {
+          reqheaders: {
+            authorization: "Bearer some-access-token-1",
+          },
+        })
+          .get("/some/endpoint")
+          .reply(302, undefined, {
+            Location:
+              "https://api.cmp.optimizely.com/v3/some/redirected/endpoint",
+          });
+
+        const scope2 = nock(WELCOME_API_BASE_URL, {
+          reqheaders: {
+            authorization: "Bearer some-access-token-2",
+          },
+        })
+          .get("/some/redirected/endpoint")
+          .reply(code, {
+            message: `${errorClass.name} error`,
+          });
+
+        const response = apiCaller.get("/some/endpoint", tokenGetParam);
+
+        await expect(response).rejects.toStrictEqual(
+          new errorClass({
+            message: `${errorClass.name} error`,
+          })
+        );
+        expect(scope1.isDone()).toBe(true);
+        expect(scope2.isDone()).toBe(true);
+      }
+    );
+
+    it("should reject when a 302 response has no Location header", async () => {
+      const scope = nock(WELCOME_API_BASE_URL, {
+        reqheaders: {
+          authorization: "Bearer some-access-token-1",
+        },
+      })
+        .get("/some/endpoint")
+        .reply(302);
+
+      const response = apiCaller.get("/some/endpoint", tokenGetParam);
+
+      await expect(response).rejects.toThrow(/without a Location header/);
+      expect(scope.isDone()).toBe(true);
+    });
+
+    it("should reject when the response body is not valid json", async () => {
+      const scope = nock(WELCOME_API_BASE_URL, {
+        reqheaders: {
+          authorization: "Bearer some-access-token-1",
+        },
+      })
+        .get("/some/endpoint")
+        .reply(200, "<html><body>502 Bad Gateway</body></html>");
+
+      const response = apiCaller.get("/some/endpoint", tokenGetParam);
+
+      await expect(response).rejects.toThrow(SyntaxError);
+      expect(scope.isDone()).toBe(true);
+    });
+
+    it("should reject when token rotation fails during the 401 retry", async () => {
+      const rotationError = new Error("refresh token expired");
+      auth.rotateTokens = jest.fn().mockRejectedValue(rotationError);
+
+      const scope = nock(WELCOME_API_BASE_URL, {
+        reqheaders: {
+          authorization: "Bearer some-access-token-1",
+        },
+      })
+        .get("/some/error")
+        .reply(401, {
+          message: "Unauthorized error",
+        });
+
+      const response = apiCaller.get("/some/error", tokenGetParam);
+
+      await expect(response).rejects.toStrictEqual(rotationError);
+      expect(scope.isDone()).toBe(true);
+    });
+
+    it.each([
+      [400, BadRequest],
       [401, Unauthorized],
       [403, Forbidden],
       [404, NotFound],
