@@ -132,8 +132,9 @@ export class Auth {
 
     const payloadStringified = JSON.stringify(payload);
     const options: RequestOptions = {
-      host: url.host,
+      hostname: url.hostname,
       path: url.pathname,
+      port: url.port,
       method: "POST",
       headers: {
         "Content-Type": "application/json",

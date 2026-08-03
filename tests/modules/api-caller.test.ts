@@ -1,6 +1,7 @@
 import { APICaller } from "../../src/modules/api-caller";
 import { Auth } from "../../src/modules/auth";
 import * as nock from "nock";
+import * as https from "https";
 import {
   BadRequest,
   Forbidden,
@@ -153,6 +154,28 @@ describe("APICaller module", () => {
       expect(response).toStrictEqual(camelCaseObject);
       expect(accessTokenMock).toBeCalledWith(tokenGetParam);
       expect(scope.isDone()).toBe(true);
+    });
+
+    it("should pass the hostname without the port to the request options", async () => {
+      const requestSpy = jest.spyOn(https, "request");
+      const scope = nock("https://api.optimizely-cmp.com:3000/v3")
+        .get("/some/endpoint")
+        .reply(200, snake_case_object);
+
+      await apiCaller.get(
+        "https://api.optimizely-cmp.com:3000/v3/some/endpoint",
+        tokenGetParam
+      );
+
+      expect(requestSpy).toBeCalledWith(
+        expect.objectContaining({
+          hostname: "api.optimizely-cmp.com",
+          port: "3000",
+        }),
+        expect.any(Function)
+      );
+      expect(scope.isDone()).toBe(true);
+      requestSpy.mockRestore();
     });
 
     it("should properly send GET request to the relative URL and return the json data", async () => {

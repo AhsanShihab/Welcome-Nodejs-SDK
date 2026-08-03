@@ -1,6 +1,7 @@
 import { Unauthorized } from "../../src/errors";
 import { Auth } from "../../src/modules/auth";
 import * as nock from "nock";
+import * as https from "https";
 
 describe("Auth module", () => {
   describe("tokens", () => {
@@ -442,6 +443,34 @@ describe("Auth module", () => {
       await auth.revokeRefreshToken(tokenGetParam);
       expect(refreshToken).toBeCalledWith(tokenGetParam);
       expect(scope.isDone()).toBe(true);
+    });
+  });
+
+  describe("ssoBaseUrl with a custom port", () => {
+    it("should pass the hostname without the port to the request options", async () => {
+      const requestSpy = jest.spyOn(https, "request");
+      const scope = nock("https://accounts.cmp-localdev.optimizely.com:4443")
+        .post("/o/oauth2/v1/revoke")
+        .reply(200, { msg: "success" });
+
+      const auth = new Auth({
+        accessToken: "my-access-token",
+        refreshToken: "456",
+        clientId: "12345678-1234-1234-1234-123456789012",
+        clientSecret: "my-encrypted-secret-1234",
+        ssoBaseUrl: "https://accounts.cmp-localdev.optimizely.com:4443",
+      });
+      await auth.revokeAccessToken();
+
+      expect(requestSpy).toBeCalledWith(
+        expect.objectContaining({
+          hostname: "accounts.cmp-localdev.optimizely.com",
+          port: "4443",
+        }),
+        expect.any(Function)
+      );
+      expect(scope.isDone()).toBe(true);
+      requestSpy.mockRestore();
     });
   });
 });

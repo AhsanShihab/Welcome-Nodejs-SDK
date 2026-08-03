@@ -71,7 +71,7 @@ export class APICaller {
         : payload
     );
     const options: RequestOptions = {
-      host: url.host,
+      hostname: url.hostname,
       path: url.pathname + url.search,
       port: url.port,
       method: method,
